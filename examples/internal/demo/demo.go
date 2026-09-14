@@ -47,7 +47,8 @@ func (c *Check) Done() {
 	fmt.Println("\nALL CHECKS PASSED")
 }
 
-// Same compares two zero-copy output rows NaN-safely (NaN==NaN counts).
+// Same compares two zero-copy output rows NaN-safely, bit-exact (NaN==NaN
+// counts). Use only where the core guarantees bit-identical results.
 func Same(a, b []tulip.CDouble) bool {
 	if len(a) != len(b) {
 		return false
@@ -55,6 +56,29 @@ func Same(a, b []tulip.CDouble) bool {
 	for i := range a {
 		x, y := float64(a[i]), float64(b[i])
 		if x != y && !(math.IsNaN(x) && math.IsNaN(y)) {
+			return false
+		}
+	}
+	return true
+}
+
+// SameTol compares rows with |a-b| <= abs + rel*max(|a|,|b|). SIMD-vs-scalar
+// and other approx-equal code paths (reciprocal division, vectorized
+// accumulation) legitimately differ by ulps — the core's own tests allow
+// this (e.g. ad: approx_eq 1e-2), so examples comparing SIMD output to the
+// scalar reference must use a tolerance, not bit-equality.
+func SameTol(a, b []tulip.CDouble, rel, abs float64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		x, y := float64(a[i]), float64(b[i])
+		if math.IsNaN(x) && math.IsNaN(y) {
+			continue
+		}
+		xa, ya := math.Abs(x), math.Abs(y)
+		tol := abs + rel*math.Max(xa, ya)
+		if math.Abs(x-y) > tol {
 			return false
 		}
 	}
