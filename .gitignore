@@ -1,3 +1,5 @@
 *.test
 *.out
 coverage.*
+bench/.env
+cmd/bench/bench
