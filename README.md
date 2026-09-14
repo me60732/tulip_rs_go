@@ -18,10 +18,14 @@ handle's `Close` is idempotent, finalizers are leak nets not mechanisms, and
 ```
 tulip_rs_go/
   go.mod
-  tulip/       shared plumbing: errors, metadata, input marshalling,
-               Result / State / SimdResult ownership wrappers
-  adx/         ADX indicator (the pattern all indicator packages follow)
-  examples/adx end-to-end runnable demo (mirrors adx_example.c)
+  tulip/            shared plumbing: errors, metadata, input marshalling,
+                    Result / State / SimdResult ownership wrappers
+  indicators/       one file per indicator, all in one package, each
+                    namespaced behind a facade value (indicators.Adx. …);
+                    helpers.go holds the shared cgo option-set marshalling
+  examples/internal/demo  shared example harness (series generation,
+                    NaN-safe comparison, pass/fail bookkeeping)
+  examples/adx      end-to-end runnable demo (mirrors adx_example.c)
 ```
 
 ## Prerequisites
@@ -53,12 +57,12 @@ Expected tail: `ALL CHECKS PASSED`.
 
 ```go
 import (
-    "tulip_rs_go/adx"
+    "tulip_rs_go/indicators"
     "tulip_rs_go/tulip"
 )
 
 options := []float64{14.0}
-res, st, err := adx.Indicator(high, low, close, options, []bool{true, true, true})
+res, st, err := indicators.Adx.Indicator(high, low, close, options, []bool{true, true, true})
 if err != nil { ... }
 defer res.Close()
 defer st.Close()
@@ -69,17 +73,18 @@ out, err := st.Batch(h2, l2, c2, nil) // stream new bars
 defer out.Close()
 
 blob, err := st.Serialize(tulip.FormatBincode) // TRFS blob: store anywhere
-st2, err := adx.DeserializeState(blob)         // resume in any language binding
-st3, err := st.Clone()                          // or snapshot in-process
+st2, err := indicators.Adx.DeserializeState(blob) // resume in any language binding
+st3, err := st.Clone()                             // or snapshot in-process
 
-sim, err := adx.SimdByAssets(assets, options, nil) // N assets, one pass
+sim, err := indicators.Adx.SimdByAssets(assets, options, nil) // N assets, one pass
 defer sim.Close()                                  // frees lane states first
 
-sim2, err := adx.SimdByOptions(h, l, c, [][]float64{{3}, {5}, {7}, {10}}, nil)
+sim2, err := indicators.Adx.SimdByOptions(h, l, c, [][]float64{{3}, {5}, {7}, {10}}, nil)
 defer sim2.Close()
 ```
 
 ## Status
 
-- `adx` is complete and verified; the other indicator packages will follow
-  the same template (per-indicator package over the shared `tulip` core).
+- `adx` is complete and verified; remaining indicators land as one file each
+  in `indicators/`, following the same template (arities/ids read from the
+  generated C headers, never hand-copied).
