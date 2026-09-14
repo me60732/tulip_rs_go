@@ -52,6 +52,7 @@ static inline double      ***d3_u(uintptr_t p) { return (double ***)(void *)p; }
 static inline size_t        *sz_u(uintptr_t p) { return (size_t *)(void *)p; }
 static inline size_t       **sz2_u(uintptr_t p) { return (size_t **)(void *)p; }
 static inline const char   **cs_u(uintptr_t p) { return (const char **)(void *)p; }
+static inline const CDisplayGroup *dg_u(uintptr_t p) { return (const CDisplayGroup *)(void *)p; }
 static inline uintptr_t      slot_u(uintptr_t arr, size_t i) { return ((uintptr_t *)arr)[i]; }
 
 // one-shot free shims: rebuild the C result struct from stored raw parts
@@ -172,6 +173,35 @@ func typeName(code int32) IndicatorType {
 	}
 }
 
+// DisplayType mirrors CDisplayType as a readable string.
+type DisplayType string
+
+func displayTypeName(code int32) DisplayType {
+	switch code {
+	case 0:
+		return "Overlay"
+	case 1:
+		return "Indicator"
+	case 2:
+		return "Volume"
+	case 3:
+		return "Price"
+	default:
+		return DisplayType(fmt.Sprintf("Unknown(%d)", code))
+	}
+}
+
+// DisplayGroup is one named grouping of an indicator's outputs (e.g. ADX's
+// "adx_dx" Directional Index group) — how chart/front-end layers should
+// plot them. Process-lifetime on the Rust side: all strings are Go copies.
+type DisplayGroup struct {
+	ID          string
+	Label       string
+	DisplayType DisplayType
+	Offset      string // "" when the group has no horizontal offset
+	Outputs     []string
+}
+
 // Info is an immutable Go copy of the FFI's CIndicatorInfo. The underlying
 // C strings are leaked process-lifetime on the Rust side (copy at init,
 // never free) — this type makes the C struct entirely moot.
@@ -183,11 +213,12 @@ type Info struct {
 	Options         []string
 	Outputs         []string
 	OptionalOutputs []string
+	DisplayGroups   []DisplayGroup
 }
 
 // NewInfo assembles Info from primitives, so indicator packages never pass
 // cgo struct types across the package boundary (they are per-package).
-func NewInfo(typeCode int32, name, fullName string, inputs, options, outputs, optionalOutputs []string) Info {
+func NewInfo(typeCode int32, name, fullName string, inputs, options, outputs, optionalOutputs []string, displayGroups []DisplayGroup) Info {
 	return Info{
 		Name:            name,
 		FullName:        fullName,
@@ -196,6 +227,7 @@ func NewInfo(typeCode int32, name, fullName string, inputs, options, outputs, op
 		Options:         options,
 		Outputs:         outputs,
 		OptionalOutputs: optionalOutputs,
+		DisplayGroups:   displayGroups,
 	}
 }
 
@@ -210,6 +242,27 @@ func CopyStringArray(addr uintptr, n int) []string {
 	out := make([]string, n)
 	for i, p := range ptrs {
 		out[i] = C.GoString(p)
+	}
+	return out
+}
+
+// CopyDisplayGroups reads a CDisplayGroupArray (given as a raw address +
+// length) into Go values. addr 0 yields nil. Like Info's strings, this is
+// process-lifetime data: copy, never free.
+func CopyDisplayGroups(addr uintptr, n int) []DisplayGroup {
+	if addr == 0 || n == 0 {
+		return nil
+	}
+	dgs := unsafe.Slice(C.dg_u(C.uintptr_t(addr)), n)
+	out := make([]DisplayGroup, n)
+	for i, dg := range dgs {
+		out[i] = DisplayGroup{
+			ID:          C.GoString(dg.id),
+			Label:       C.GoString(dg.label),
+			DisplayType: displayTypeName(int32(dg.display_type)),
+			Offset:      C.GoString(dg.offset),
+			Outputs:     CopyStringArray(uintptr(unsafe.Pointer(dg.outputs.ptr)), int(dg.outputs.len)),
+		}
 	}
 	return out
 }

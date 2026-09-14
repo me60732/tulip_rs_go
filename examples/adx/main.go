@@ -19,6 +19,13 @@ func main() {
 	fmt.Printf("=== %s (%s) ===\n", info.Name, info.FullName)
 	fmt.Printf("Inputs: %v, Options: %v, Optional: %v, Type: %s\n",
 		info.Inputs, info.Options, info.OptionalOutputs, info.Type)
+	for _, dg := range info.DisplayGroups {
+		fmt.Printf("Display group %q (%s): outputs %v, %s", dg.Label, dg.ID, dg.Outputs, dg.DisplayType)
+		if dg.Offset != "" {
+			fmt.Printf(", offset %s", dg.Offset)
+		}
+		fmt.Println()
+	}
 
 	// Size the synthetic series from the indicator's own min_data so the
 	// partial (n-50) slice is always big enough.
