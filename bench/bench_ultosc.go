@@ -1,7 +1,11 @@
 package bench
 
 import (
+	"context"
 	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/momentum"
 )
 
 func init() {
@@ -24,7 +28,17 @@ func init() {
 
 			return nil
 		},
-		CinarFn: nil, // no Cinar UltimateOscillator implementation
+		CinarFn: func(s Stock, opts []float64) error {
+			uo := momentum.NewUltimateOscillatorWithPeriods[float64](int(opts[0]), int(opts[1]), int(opts[2]))
+			result := uo.ComputeWithContext(context.Background(), helper.SliceToChan(s.High), helper.SliceToChan(s.Low), helper.SliceToChan(s.Close))
+			rows := helper.ChanToSlices(result)
+			for _, row := range rows {
+				if len(row) > 0 {
+					_ = row[0]
+				}
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			// 3-lane SIMD across assets (same series, same options)
 			assets := make([][3][]float64, len(stocks))

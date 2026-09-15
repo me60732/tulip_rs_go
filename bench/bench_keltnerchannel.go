@@ -25,7 +25,7 @@ func init() {
 			}
 			return nil
 		},
-		CinarFn: nil, // cinar KeltnerChannel has no multiplier param; our option sets vary it (fixed-multiplier version is not a genuine equivalent)
+		CinarFn: nil, // cinar KeltnerChannel hardcodes 2*ATR multiplier - file sweeps period+multiplier pairs like {20.0, 2.0}
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.KeltnerchannelInputs][]float64, len(stocks))
 			for i, s := range stocks {

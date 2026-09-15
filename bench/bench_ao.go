@@ -1,9 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
 
-	"github.com/cinar/indicator"
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/momentum"
 )
 
 func init() {
@@ -25,11 +28,13 @@ func init() {
 			return nil
 		},
 		CinarFn: func(s Stock, opts []float64) error {
-			result := indicator.AwesomeOscillator(s.Low, s.High)
-			if len(result) == 0 {
+			ao := momentum.NewAwesomeOscillator[float64]()
+			result := ao.ComputeWithContext(context.Background(), helper.SliceToChan(s.High), helper.SliceToChan(s.Low))
+			rows := helper.ChanToSlice(result)
+			if len(rows) == 0 {
 				return nil
 			}
-			_ = result[0]
+			_ = rows[0]
 			return nil
 		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {

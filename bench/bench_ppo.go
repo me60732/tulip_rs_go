@@ -1,9 +1,13 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
 
-	"github.com/cinar/indicator"
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/momentum"
+	"github.com/cinar/indicator/v2/trend"
 )
 
 func init() {
@@ -25,13 +29,19 @@ func init() {
 			return nil
 		},
 		CinarFn: func(s Stock, opts []float64) error {
-			// cinar PercentagePriceOscillator(fastPeriod, slowPeriod, signalPeriod int, price)
-			// returns (ppo, signal, histogram); we use ppo[0] for comparison
-			ppo, _, _ := indicator.PercentagePriceOscillator(int(opts[0]), int(opts[1]), 9, s.Close)
-			if len(ppo) == 0 {
-				return nil
+			ppo := &momentum.Ppo[float64]{
+				ShortEma:  trend.NewEmaWithPeriod[float64](int(opts[0])),
+				LongEma:   trend.NewEmaWithPeriod[float64](int(opts[1])),
+				SignalEma: trend.NewEmaWithPeriod[float64](9),
 			}
-			_ = ppo[0]
+			ppoChan, signalChan, histogramChan := ppo.ComputeWithContext(context.Background(), helper.SliceToChan(s.Close))
+			// Drain all three output channels concurrently to avoid deadlock on unbuffered channels.
+			rows := helper.ChanToSlices(ppoChan, signalChan, histogramChan)
+			for _, row := range rows {
+				if len(row) > 0 {
+					_ = row[0]
+				}
+			}
 			return nil
 		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {

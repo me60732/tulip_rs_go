@@ -25,10 +25,10 @@ func init() {
 			}
 			return nil
 		},
-		// CinarFn: nil -- cinar Macd(closing []float64) returns only 2 rows
-		// (macd, signal) with hardcoded defaults (12/26), not the full 3-row
-		// output (macd, short_ema, long_ema) and no parameterization for
-		// fastperiod/slowperiod(signalperiod). Not a genuine equivalent.
+		// CinarFn: nil -- cinar v2 Macd returns only 2 outputs (macd, signal),
+		// not the full 3-row output (macd, short_ema, long_ema) from Tulip.
+		// NewMacdWithPeriod[T](period1, period2, period3) exists but ComputeWithContext
+		// yields only (<-chan T, <-chan T), cannot match Tulip's 3-row consumption.
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.MacdInputs][]float64, len(stocks))
 			for i, s := range stocks {

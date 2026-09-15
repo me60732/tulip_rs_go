@@ -1,7 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/trend"
 )
 
 func init() {
@@ -22,7 +27,16 @@ func init() {
 			_ = res.Rows[0][0]
 			return nil
 		},
-		CinarFn: nil, // cinar has no RateOfChange; only private diff helper (not exposed)
+		CinarFn: func(s Stock, opts []float64) error {
+			// cinar v2 Roc computes percentage rate of change: (current - n periods ago) / n periods ago
+			roc := trend.NewRocWithPeriod[float64](int(opts[0]))
+			result := roc.ComputeWithContext(context.Background(), helper.SliceToChan(s.Close))
+			// Drain unbuffered channel, touch first value to prevent elision
+			for v := range result {
+				_ = v
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.RocInputs][]float64, len(stocks))
 			for i, s := range stocks {

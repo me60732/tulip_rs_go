@@ -1,7 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/volume"
 )
 
 func init() {
@@ -24,7 +29,17 @@ func init() {
 
 			return nil
 		},
-		CinarFn: nil, // emv has no options; cinar's EaseOfMovement requires a hardcoded period parameter, not a genuine equivalent
+		CinarFn: func(s Stock, opts []float64) error {
+			emv := volume.NewEmv[float64]()
+			result := emv.ComputeWithContext(context.Background(), helper.SliceToChan(s.High), helper.SliceToChan(s.Low), helper.SliceToChan(s.Volume))
+			rows := helper.ChanToSlices(result)
+			for _, row := range rows {
+				if len(row) > 0 {
+					_ = row[0]
+				}
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			// 3-lane SIMD across assets (same series, same options)
 			assets := make([][3][]float64, len(stocks))

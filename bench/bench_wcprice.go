@@ -1,7 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/trend"
 )
 
 func init() {
@@ -22,7 +27,18 @@ func init() {
 			_ = res.Rows[0][0]
 			return nil
 		},
-		CinarFn: nil, // no Weighted Close Price function in cinar
+		CinarFn: func(s Stock, opts []float64) error {
+			wc := trend.NewWeightedClose[float64]()
+			result := wc.ComputeWithContext(context.Background(),
+				helper.SliceToChan(s.High), helper.SliceToChan(s.Low), helper.SliceToChan(s.Close))
+			rows := helper.ChanToSlices(result)
+			for _, row := range rows {
+				if len(row) > 0 {
+					_ = row[0]
+				}
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][3][]float64, len(stocks))
 			for i, s := range stocks {

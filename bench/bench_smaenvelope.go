@@ -1,6 +1,13 @@
 package bench
 
-import "tulip_rs_go/indicators"
+import (
+	"context"
+
+	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/trend"
+)
 
 func init() {
 	register(BenchmarkDef{
@@ -23,7 +30,20 @@ func init() {
 			}
 			return nil
 		},
-		CinarFn: nil, // no cinar equivalent (smaenvelope not in cinar/indicator)
+		CinarFn: func(s Stock, opts []float64) error {
+			env := trend.NewEnvelope[float64](
+				trend.NewSmaWithPeriod[float64](int(opts[0])),
+				opts[1],
+			)
+			upper, middle, lower := env.ComputeWithContext(context.Background(), helper.SliceToChan(s.Close))
+			rows := helper.ChanToSlices(upper, middle, lower)
+			for _, row := range rows {
+				if len(row) > 0 {
+					_ = row[0]
+				}
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.SmaenvelopeInputs][]float64, len(stocks))
 			for i, s := range stocks {

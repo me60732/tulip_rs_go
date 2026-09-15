@@ -24,8 +24,8 @@ func init() {
 
 			return nil
 		},
-		// CinarFn: nil -- cinar has no KVO implementation (no match in
-		// momentum_indicators.go or trend_indicators.go).
+		CinarFn: nil, // v2 Kvo uses fixed internal periods (34/55) and signal period (13);
+		// file sweeps {short_period, long_period} not controllable in v2
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.KvoInputs][]float64, len(stocks))
 			for i, s := range stocks {

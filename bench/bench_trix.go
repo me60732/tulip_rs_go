@@ -1,9 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
 
-	"github.com/cinar/indicator"
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/trend"
 )
 
 func init() {
@@ -28,12 +31,13 @@ func init() {
 			return nil
 		},
 		CinarFn: func(s Stock, opts []float64) error {
-			// Cinar has Trix(period int, values []float64) []float64
-			result := indicator.Trix(int(opts[0]), s.Close)
-			if len(result) == 0 {
-				return nil // empty output is valid
+			trix := trend.NewTrix[float64]()
+			trix.Period = int(opts[0])
+			result := trix.ComputeWithContext(context.Background(), helper.SliceToChan(s.Close))
+			rows := helper.ChanToSlice(result)
+			if len(rows) > 0 {
+				_ = rows[0]
 			}
-			_ = result[0] // consume to prevent elision
 			return nil
 		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {

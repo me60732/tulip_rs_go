@@ -22,12 +22,7 @@ func init() {
 			}
 			return nil
 		},
-		CinarFn: func(s Stock, opts []float64) error {
-			// Cinar has TypicalPrice(low, high, closing []float64) ([]float64, []float64)
-			// which returns (typical, average) where typical = (high+low+close)/3
-			// MEDPRICE = (high+low)/2, so no direct match; skip Cinar
-			return nil
-		},
+		// CinarFn: nil -- cinar has no median price; TypicalPrice is (high+low+close)/3
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.MedpriceInputs][]float64, len(stocks))
 			for i, s := range stocks {

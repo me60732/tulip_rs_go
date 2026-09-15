@@ -47,5 +47,12 @@ go run ./cmd/bench
 
 - **92 bench files** covering 94 indicators (avgprice, dx missing)
 - **No duplicate registrations**
-- **All CinarFn wires verified** for param compatibility
-- `go build ./bench` and `go vet ./bench` pass
+- Cinar reference uses **github.com/cinar/indicator/v2 v2.1.44** (generic,
+  stream/channel API: constructor + `ComputeWithContext` + `helper.ChanToSlices`).
+  45 indicators have real `CinarFn` closures; all others are `CinarFn: nil` with an
+  explanatory comment (cinar lacks the indicator, or its parameters/output rows are
+  not param-compatible with the swept option sets). A no-op `CinarFn` closure is
+  never registered — the harness skips nil and would otherwise time an empty
+  function.
+- `go build ./bench` and `go vet ./bench` pass; full smoke run (all 94 indicators)
+  completes without channel-drain deadlocks

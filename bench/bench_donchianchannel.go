@@ -1,7 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/volatility"
 )
 
 func init() {
@@ -24,7 +29,20 @@ func init() {
 
 			return nil
 		},
-		CinarFn: nil, // Cinar DonchianChannel(period int, closing []float64) uses ONLY closing, while tulip-rs uses [high, low] — incompatible signature
+		CinarFn: func(s Stock, opts []float64) error {
+			// v2 DonchianChannel consumes (highs, lows) and varies period
+			// freely — a genuine match for our {period} sweep.
+			dc := volatility.NewDonchianChannelWithPeriod[float64](int(opts[0]))
+			upper, middle, lower := dc.ComputeWithContext(context.Background(),
+				helper.SliceToChan(s.High), helper.SliceToChan(s.Low))
+			rows := helper.ChanToSlices(upper, middle, lower)
+			for _, row := range rows {
+				if len(row) > 0 {
+					_ = row[0]
+				}
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			// 2-lane SIMD across assets (high, low)
 			assets := make([][2][]float64, len(stocks))

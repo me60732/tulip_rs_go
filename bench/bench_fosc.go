@@ -24,13 +24,7 @@ func init() {
 
 			return nil
 		},
-		CinarFn: func(s Stock, opts []float64) error {
-			// Cinar has ForceIndex(period int, closing, volume []float64) []float64
-			// tulip fosc = force oscillator EMA(volume*Δclose)
-			// Inputs differ: cinar takes (closing, volume), tulip only takes close
-			// The definitions are related but not identical - cannot wire directly
-			return nil // skip cinar reference - inputs/definition mismatch
-		},
+		// CinarFn: nil -- cinar has no force oscillator; volume.Fi (ForceIndex) is a different indicator
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			// 1-lane SIMD across assets (same series, same options)
 			assets := make([][1][]float64, len(stocks))

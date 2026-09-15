@@ -1,7 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/volume"
 )
 
 func init() {
@@ -24,7 +29,17 @@ func init() {
 
 			return nil
 		},
-		CinarFn: nil, // cinar ChaikinMoneyFlow(high,low,closing,volume) has no period param; ours varies period
+		CinarFn: func(s Stock, opts []float64) error {
+			cmf := volume.NewCmfWithPeriod[float64](int(opts[0]))
+			result := cmf.ComputeWithContext(context.Background(), helper.SliceToChan(s.High), helper.SliceToChan(s.Low), helper.SliceToChan(s.Close), helper.SliceToChan(s.Volume))
+			rows := helper.ChanToSlices(result)
+			for _, row := range rows {
+				if len(row) > 0 {
+					_ = row[0]
+				}
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			// 4-lane SIMD across assets (same series, same options)
 			assets := make([][4][]float64, len(stocks))

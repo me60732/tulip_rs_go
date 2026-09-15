@@ -22,12 +22,7 @@ func init() {
 			}
 			return nil
 		},
-		CinarFn: func(s Stock, opts []float64) error {
-			// Cinar has no RateOfChange or Momentum fn with the same signature
-			// Use diff via pandas-like approach: s.Close.diff(int(opts[0]))
-			// Since we can't access pandas in Go and cinar doesn't have this fn, skip
-			return nil
-		},
+		// CinarFn: nil -- cinar has no momentum; trend.ROC is percentage change, not absolute diff
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.MomInputs][]float64, len(stocks))
 			for i, s := range stocks {

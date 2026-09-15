@@ -1,9 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
 
-	"github.com/cinar/indicator"
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/trend"
 )
 
 func init() {
@@ -25,13 +28,13 @@ func init() {
 			return nil
 		},
 		CinarFn: func(s Stock, opts []float64) error {
-			// cinar Max(period int, values) is a genuine rolling maximum with
-			// the same swept period parameter.
-			result := indicator.Max(int(opts[0]), s.Close)
-			if len(result) == 0 {
+			max := trend.NewMovingMaxWithPeriod[float64](int(opts[0]))
+			result := max.ComputeWithContext(context.Background(), helper.SliceToChan(s.Close))
+			rows := helper.ChanToSlice(result)
+			if len(rows) == 0 {
 				return nil
 			}
-			_ = result[0]
+			_ = rows[0]
 			return nil
 		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {

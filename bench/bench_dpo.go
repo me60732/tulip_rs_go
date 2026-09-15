@@ -1,7 +1,11 @@
 package bench
 
 import (
+	"context"
 	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/trend"
 )
 
 func init() {
@@ -24,7 +28,17 @@ func init() {
 
 			return nil
 		},
-		CinarFn: nil, // Cinar has no Dpo function (verified: no fn exists in /home/mark/go/pkg/mod/github.com/cinar/indicator@v1.3.0/*.go)
+		CinarFn: func(s Stock, opts []float64) error {
+			d := trend.NewDpoWithPeriod[float64](int(opts[0]))
+			out := d.ComputeWithContext(context.Background(), helper.SliceToChan(s.Close))
+			rows := helper.ChanToSlices(out)
+			for _, row := range rows {
+				if len(row) > 0 {
+					_ = row[0]
+				}
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			// 1-lane SIMD across assets (close only)
 			assets := make([][1][]float64, len(stocks))

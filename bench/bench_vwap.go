@@ -22,7 +22,7 @@ func init() {
 			_ = res.Rows[0][0]
 			return nil
 		},
-		CinarFn: nil, // cinar's VWAP is session-cumulative (no period param) → not tulip's rolling cumulative VWAP
+		CinarFn: nil, // v2 VWAP uses closing price only; tulip uses high/low/close/volume - different calculation
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][4][]float64, len(stocks))
 			for i, s := range stocks {

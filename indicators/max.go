@@ -1,7 +1,7 @@
 package indicators
 
 /*
-#cgo CFLAGS: -I${SRCDIR}/../../tulip_rs_ffi/include
+#cgo CFLAGS: -I${SRCDIR}/../ffi/include
 #include <stdbool.h>
 #include <stdint.h>
 // cgo prologue defines a `CBytes` helper; rename the FFI typedef to avoid

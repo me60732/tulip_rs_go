@@ -1,9 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
 
-	"github.com/cinar/indicator"
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/momentum"
 )
 
 func init() {
@@ -25,13 +28,14 @@ func init() {
 			return nil
 		},
 		CinarFn: func(s Stock, opts []float64) error {
-			// cinar Qstick(period int, opening, closing []float64) -> []float64
-			// accepts period as first param; then open/close series in correct order.
-			result := indicator.Qstick(int(opts[0]), s.Open, s.Close)
-			if len(result) == 0 {
+			qs := momentum.NewQstick[float64]()
+			qs.Sma.Period = int(opts[0])
+			result := qs.ComputeWithContext(context.Background(), helper.SliceToChan(s.Open), helper.SliceToChan(s.Close))
+			rows := helper.ChanToSlice(result)
+			if len(rows) == 0 {
 				return nil
 			}
-			_ = result[0]
+			_ = rows[0]
 			return nil
 		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {

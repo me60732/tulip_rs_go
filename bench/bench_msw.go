@@ -25,10 +25,7 @@ func init() {
 			}
 			return nil
 		},
-		CinarFn: func(s Stock, opts []float64) error {
-			// Cinar has no Mesa Sine Wave fn; skip
-			return nil
-		},
+		// CinarFn: nil -- cinar v2 has no Mesa Sine Wave function
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.MswInputs][]float64, len(stocks))
 			for i, s := range stocks {

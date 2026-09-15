@@ -1,6 +1,11 @@
 package bench
 
 import (
+	"context"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/trend"
+
 	"tulip_rs_go/indicators"
 )
 
@@ -23,9 +28,13 @@ func init() {
 			return nil
 		},
 		CinarFn: func(s Stock, opts []float64) error {
-			// Cinar Aroon uses default period of 25; we cannot vary period
-			// This is a semantic mismatch - cinar Aroon is fixed at 25 periods
-			// So we skip the reference for now
+			a := trend.NewAroon[float64]()
+			a.Period = int(opts[0])
+			highChan := helper.SliceToChan(s.High)
+			lowChan := helper.SliceToChan(s.Low)
+			out1, out2 := a.ComputeWithContext(context.Background(), highChan, lowChan)
+			helper.ChanToSlices(out1, out2)
+			_ = s.Close[0] // touch first value to prevent dead-code elimination
 			return nil
 		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {

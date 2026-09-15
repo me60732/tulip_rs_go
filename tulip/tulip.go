@@ -31,8 +31,8 @@
 package tulip
 
 /*
-#cgo CFLAGS: -I${SRCDIR}/../../tulip_rs_ffi/include
-#cgo LDFLAGS: -L${SRCDIR}/../../tulip_rs_ffi/target/release -L${SRCDIR}/../../tulip_rs_ffi/target/debug -ltulip_rs_ffi -Wl,-rpath,${SRCDIR}/../../tulip_rs_ffi/target/release -Wl,-rpath,${SRCDIR}/../../tulip_rs_ffi/target/debug -lm -ldl -lpthread
+#cgo CFLAGS: -I${SRCDIR}/../ffi/include
+#cgo LDFLAGS: -L${SRCDIR}/../ffi/lib -L${SRCDIR}/../../tulip_rs_ffi/target/release -L${SRCDIR}/../../tulip_rs_ffi/target/debug -ltulip_rs_ffi -Wl,-rpath,${SRCDIR}/../ffi/lib -Wl,-rpath,${SRCDIR}/../../tulip_rs_ffi/target/release -Wl,-rpath,${SRCDIR}/../../tulip_rs_ffi/target/debug -lm -ldl -lpthread
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>

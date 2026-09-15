@@ -1,7 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/momentum"
 )
 
 func init() {
@@ -22,7 +27,20 @@ func init() {
 			_ = res.Rows[0][0]
 			return nil
 		},
-		CinarFn: nil, // cinar WilliamsR has no period parameter (hardcoded 14); not a genuine equivalent for our variable-period option sets
+		CinarFn: func(s Stock, opts []float64) error {
+			// v2 WilliamsR period is configured through its exported Max/Min
+			// MovingMax/MovingMin instances (each has a Period field).
+			wr := momentum.NewWilliamsR[float64]()
+			period := int(opts[0])
+			wr.Max.Period = period
+			wr.Min.Period = period
+			row := helper.ChanToSlice(wr.ComputeWithContext(context.Background(),
+				helper.SliceToChan(s.High), helper.SliceToChan(s.Low), helper.SliceToChan(s.Close)))
+			if len(row) > 0 {
+				_ = row[0]
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][3][]float64, len(stocks))
 			for i, s := range stocks {

@@ -1,6 +1,12 @@
 package bench
 
-import "tulip_rs_go/indicators"
+import (
+	"context"
+	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/trend"
+)
 
 func init() {
 	register(BenchmarkDef{
@@ -22,7 +28,18 @@ func init() {
 			}
 			return nil
 		},
-		CinarFn: nil, // cinar.StochasticOscillator has no period options (hardcoded 14)
+		CinarFn: func(stock Stock, opts []float64) error {
+			// The file sweeps {period, kPeriod, dPeriod} which matches SlowStochastic.
+			s := trend.NewSlowStochasticWithPeriod[float64](int(opts[0]), int(opts[1]), int(opts[2]))
+			slowK, slowD := s.ComputeWithContext(context.Background(), helper.SliceToChan(stock.Close))
+			rows := helper.ChanToSlices(slowK, slowD)
+			for _, row := range rows {
+				if len(row) > 0 {
+					_ = row[0]
+				}
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.StochInputs][]float64, len(stocks))
 			for i, s := range stocks {

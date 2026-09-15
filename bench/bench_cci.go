@@ -1,9 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
 
-	"github.com/cinar/indicator"
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/trend"
 )
 
 func init() {
@@ -27,12 +30,13 @@ func init() {
 			return nil
 		},
 		CinarFn: func(s Stock, opts []float64) error {
-			// Cinar has CommunityChannelIndex(period int, high, low, closing []float64) []float64
-			result := indicator.CommunityChannelIndex(int(opts[0]), s.High, s.Low, s.Close)
-			if len(result) == 0 {
+			cci := trend.NewCciWithPeriod[float64](int(opts[0]))
+			result := cci.ComputeWithContext(context.Background(), helper.SliceToChan(s.High), helper.SliceToChan(s.Low), helper.SliceToChan(s.Close))
+			rows := helper.ChanToSlice(result)
+			if len(rows) == 0 {
 				return nil // empty output is valid
 			}
-			_ = result[0] // consume to prevent elision
+			_ = rows[0] // consume to prevent elision
 			return nil
 		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {

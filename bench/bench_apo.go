@@ -1,9 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
 
-	"github.com/cinar/indicator"
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/trend"
 )
 
 func init() {
@@ -25,13 +28,15 @@ func init() {
 			return nil
 		},
 		CinarFn: func(s Stock, opts []float64) error {
-			fastPeriod := int(opts[0])
-			slowPeriod := int(opts[1])
-			result := indicator.AbsolutePriceOscillator(fastPeriod, slowPeriod, s.Close)
-			if len(result) == 0 {
+			apo := trend.NewApo[float64]()
+			apo.FastPeriod = int(opts[0])
+			apo.SlowPeriod = int(opts[1])
+			result := apo.ComputeWithContext(context.Background(), helper.SliceToChan(s.Close))
+			rows := helper.ChanToSlice(result)
+			if len(rows) == 0 {
 				return nil
 			}
-			_ = result[0]
+			_ = rows[0]
 			return nil
 		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {

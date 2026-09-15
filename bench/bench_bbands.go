@@ -1,6 +1,13 @@
 package bench
 
-import "tulip_rs_go/indicators"
+import (
+	"context"
+
+	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/volatility"
+)
 
 func init() {
 	register(BenchmarkDef{
@@ -23,9 +30,23 @@ func init() {
 			}
 			return nil
 		},
-		// CinarFn: nil -- cinar BollingerBands(closing) has no period/std-dev
-		// parameters (fixed window); not a genuine equivalent for our
-		// variable-period option sets (same rule that rejected Aroon).
+		CinarFn: func(s Stock, opts []float64) error {
+			// cinar v2 BollingerBands is a stream-based generic type; period
+			// and std-dev multiplier are set on the struct, matching our
+			// {period, stdDev} option sweep one-to-one.
+			bb := volatility.NewBollingerBandsWithPeriod[float64](int(opts[0]))
+			bb.Multiplier = opts[1]
+			upper, middle, lower := bb.ComputeWithContext(context.Background(), helper.SliceToChan(s.Close))
+			// Drain all three output channels concurrently to avoid deadlock on
+			// unbuffered channels.
+			rows := helper.ChanToSlices(upper, middle, lower)
+			for _, row := range rows {
+				if len(row) > 0 {
+					_ = row[0]
+				}
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.BbandsInputs][]float64, len(stocks))
 			for i, s := range stocks {

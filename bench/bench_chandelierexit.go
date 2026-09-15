@@ -1,7 +1,11 @@
 package bench
 
 import (
+	"context"
 	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/volatility"
 )
 
 func init() {
@@ -24,7 +28,20 @@ func init() {
 
 			return nil
 		},
-		CinarFn: nil, // cinar v1.3.0 ChandelierExit uses hardcoded period=22 and multiplier=3; no parametric version available
+		CinarFn: func(s Stock, opts []float64) error {
+			ce := volatility.NewChandelierExit[float64]()
+			ce.Period = int(opts[0])
+			ce.Multiplier = opts[1]
+			long, short := ce.ComputeWithContext(context.Background(),
+				helper.SliceToChan(s.High), helper.SliceToChan(s.Low), helper.SliceToChan(s.Close))
+			rows := helper.ChanToSlices(long, short) // drains two output chans together
+			for _, row := range rows {
+				if len(row) > 0 {
+					_ = row[0]
+				}
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			// 3-lane SIMD across assets (same series, same options)
 			assets := make([][3][]float64, len(stocks))

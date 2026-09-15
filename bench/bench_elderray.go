@@ -1,7 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/momentum"
 )
 
 func init() {
@@ -24,7 +29,18 @@ func init() {
 
 			return nil
 		},
-		CinarFn: nil, // Cinar has no ElderRay function (verified: no fn exists in /home/mark/go/pkg/mod/github.com/cinar/indicator@v1.3.0/*.go; ElderForce/ElderRule are different)
+		CinarFn: func(s Stock, opts []float64) error {
+			er := momentum.NewElderRayWithPeriod[float64](int(opts[0]))
+			bullPower, bearPower := er.ComputeWithContext(context.Background(),
+				helper.SliceToChan(s.High), helper.SliceToChan(s.Low), helper.SliceToChan(s.Close))
+			rows := helper.ChanToSlices(bullPower, bearPower)
+			for _, row := range rows {
+				if len(row) > 0 {
+					_ = row[0]
+				}
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			// 3-lane SIMD across assets (high, low, close)
 			assets := make([][3][]float64, len(stocks))

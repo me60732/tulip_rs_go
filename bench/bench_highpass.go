@@ -24,11 +24,7 @@ func init() {
 
 			return nil
 		},
-		CinarFn: func(s Stock, opts []float64) error {
-			// Cinar has no HighPass or Highpass function in the indicator package
-			// Verified via grep for '^func HighPass' - none found
-			return nil // skip cinar reference
-		},
+		// CinarFn: nil -- cinar has no high-pass filter
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			// 1-lane SIMD across assets (same series, same options)
 			assets := make([][1][]float64, len(stocks))

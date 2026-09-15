@@ -20,6 +20,7 @@ func init() {
 			}
 			return nil
 		},
+		CinarFn: nil, // Mass Index v2 uses fixed periods 9/9/25; tulip sweeps period param (14,20,25,30) which v2 cannot control
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.MassInputs][]float64, len(stocks))
 			for i, s := range stocks {

@@ -25,7 +25,7 @@ func init() {
 			}
 			return nil
 		},
-		CinarFn: nil, // ichimoku has no cinar equivalent (cinar's IchimokuCloud hardcodes 9/26/52 windows)
+		CinarFn: nil, // cinar IchimokuCloud hardcodes periods (9/26/52) - file sweeps custom pairs like 9/26, 5/10; also output mismatch (cinar 5 rows vs tulip 4)
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.IchimokuInputs][]float64, len(stocks))
 			for i, s := range stocks {

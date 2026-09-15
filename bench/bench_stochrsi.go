@@ -22,7 +22,10 @@ func init() {
 			}
 			return nil
 		},
-		CinarFn: nil, // cinar does not have StochRSI
+		// CinarFn: nil -- v2 StochasticRsi returns only 1 output (stochrsi),
+		// but Tulip's indicator returns 2 rows (stochrsi, signal).
+		// NewStochasticRsiWithPeriod[T](period) exists but ComputeWithContext
+		// yields <-chan T only, cannot match Tulip's 2-row consumption.
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.StochrsiInputs][]float64, len(stocks))
 			for i, s := range stocks {

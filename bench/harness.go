@@ -54,7 +54,12 @@ var (
 	LOG_TO_DB    bool
 )
 
-func init() {
+// InitConfig captures the benchmark knobs from the environment. MUST be
+// called after LoadDotEnv() — a package init() would snapshot the raw
+// process env before .env is applied, silently ignoring BENCHMARK_LOG_TO_DB
+// and friends. RunAll calls this itself, so callers only need to invoke it
+// directly if they use the timing vars before RunAll.
+func InitConfig() {
 	// Defaults mirror the Python harness
 	BENCH_NUMBER = envInt("BENCH_NUMBER", 10)
 	BENCH_REPEAT = envInt("BENCH_REPEAT", 30)
@@ -376,12 +381,21 @@ func printRow(impl, symbol string, opts []float64, t TimingResult) {
 // Core runner
 // ---------------------------------------------------------------------
 
+// runBenchmark measures one indicator in implementation-isolated phases,
+// mirroring the Rust criterion layout (bench_rust_ema / bench_c_ema / ...):
+// every stock × option set is timed for tulip_rs_go first, then the same
+// grid is re-walked for each reference implementation. Interleaving the
+// implementations per option set lets one implementation's runtime
+// behaviour leak into its neighbour's timing window — most visibly cinar's
+// per-call goroutine/channel churn and GC pressure landing directly before
+// a tulip measurement. runtime.GC() at each phase boundary keeps that
+// hand-off clean.
 func runBenchmark(def BenchmarkDef, stocks []Stock, logger *BenchmarkLogger) {
 	fmt.Printf("\n--- %s ---\n", def.Name)
 
+	// Phase 1: tulip_rs_go — full stock × option grid.
 	for _, s := range stocks {
 		for _, opts := range def.Options {
-			// Tulip_rs_go
 			tulipResult := timeFn(func() {
 				if err := def.TulipFn(s, opts); err != nil {
 					fmt.Fprintf(os.Stderr, "[warn] tulip_fn failed for %s: %v\n", s.Symbol, err)
@@ -393,9 +407,14 @@ func runBenchmark(def BenchmarkDef, stocks []Stock, logger *BenchmarkLogger) {
 					// log failure already printed by logger
 				}
 			}
+		}
+	}
 
-			// Cinar (if provided)
-			if def.CinarFn != nil {
+	// Phase 2: Cinar (if provided) — full grid after tulip has finished.
+	if def.CinarFn != nil {
+		runtime.GC() // clear the previous phase's garbage before timing
+		for _, s := range stocks {
+			for _, opts := range def.Options {
 				cinarResult := timeFn(func() {
 					if err := def.CinarFn(s, opts); err != nil {
 						fmt.Fprintf(os.Stderr, "[warn] cinar_fn failed for %s: %v\n", s.Symbol, err)
@@ -408,9 +427,14 @@ func runBenchmark(def BenchmarkDef, stocks []Stock, logger *BenchmarkLogger) {
 					}
 				}
 			}
+		}
+	}
 
-			// Quantgo (if provided)
-			if def.QuantgoFn != nil {
+	// Phase 3: Quantgo (if provided) — full grid after the previous phases.
+	if def.QuantgoFn != nil {
+		runtime.GC()
+		for _, s := range stocks {
+			for _, opts := range def.Options {
 				qgResult := timeFn(func() {
 					if err := def.QuantgoFn(s, opts); err != nil {
 						fmt.Fprintf(os.Stderr, "[warn] quantgo_fn failed for %s: %v\n", s.Symbol, err)
@@ -466,6 +490,8 @@ func runBenchmark(def BenchmarkDef, stocks []Stock, logger *BenchmarkLogger) {
 }
 
 func RunAll(stocks []Stock) (int64, int) {
+	InitConfig()
+
 	// Sort registrations by name for deterministic output order
 	sort.Slice(benchDefs, func(i, j int) bool {
 		return benchDefs[i].Name < benchDefs[j].Name

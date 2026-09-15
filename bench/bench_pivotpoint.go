@@ -22,7 +22,7 @@ func init() {
 			_ = res.Rows[0][0]
 			return nil
 		},
-		CinarFn: nil, // no Pivot* fn in cinar
+		CinarFn: nil, // v2 PivotPoint has no period parameter (only Method field for calculation style); cannot match Tulip's swept period options
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.PivotpointInputs][]float64, len(stocks))
 			for i, s := range stocks {

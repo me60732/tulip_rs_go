@@ -1,7 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/trend"
 )
 
 func init() {
@@ -24,9 +29,17 @@ func init() {
 
 			return nil
 		},
-		// CinarFn: nil -- cinar has no KAMA implementation; ta.momentum.KAMAIndicator
-		// exists but we only wire cinar if there's a direct equivalent with matching
-		// parameterization (period-only, same output definition).
+		CinarFn: func(s Stock, opts []float64) error {
+			// v2 Kama: ER period swept; fast/slow SC stay at library defaults (2/30).
+			k := trend.NewKamaWith[float64](int(opts[0]),
+				trend.DefaultKamaFastScPeriod, trend.DefaultKamaSlowScPeriod)
+			row := helper.ChanToSlice(k.ComputeWithContext(context.Background(),
+				helper.SliceToChan(s.Close)))
+			if len(row) > 0 {
+				_ = row[0]
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.KamaInputs][]float64, len(stocks))
 			for i, s := range stocks {

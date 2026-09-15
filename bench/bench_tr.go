@@ -1,7 +1,11 @@
 package bench
 
 import (
+	"context"
 	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/volatility"
 )
 
 func init() {
@@ -24,7 +28,17 @@ func init() {
 
 			return nil
 		},
-		CinarFn: nil, // Cinar has no True Range function (only Atr which requires period parameter)
+		CinarFn: func(s Stock, opts []float64) error {
+			tr := volatility.NewTrueRange[float64]()
+			result := tr.ComputeWithContext(context.Background(), helper.SliceToChan(s.High), helper.SliceToChan(s.Low), helper.SliceToChan(s.Close))
+			rows := helper.ChanToSlices(result)
+			for _, row := range rows {
+				if len(row) > 0 {
+					_ = row[0]
+				}
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			// 3-lane SIMD across assets (same series, same options)
 			assets := make([][indicators.TrInputs][]float64, len(stocks))

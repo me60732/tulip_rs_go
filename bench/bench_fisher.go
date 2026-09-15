@@ -1,7 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/momentum"
 )
 
 func init() {
@@ -25,9 +30,15 @@ func init() {
 			return nil
 		},
 		CinarFn: func(s Stock, opts []float64) error {
-			// Cinar has no FisherTransform function in the indicator package
-			// Verified via grep for '^func Fisher' - none found
-			return nil // skip cinar reference
+			// cinar v2 EhlersFisher uses (High+Low)/2 with recursive smoothing,
+			// matching tulip Fisher semantics for period-swept options.
+			fisher := momentum.NewEhlersFisherWithPeriod[float64](int(opts[0]))
+			result := fisher.ComputeWithContext(context.Background(), helper.SliceToChan(s.High), helper.SliceToChan(s.Low))
+			// Drain unbuffered channel, touch first value to prevent elision
+			for v := range result {
+				_ = v
+			}
+			return nil
 		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			// 2-lane SIMD across assets (same series, same options)

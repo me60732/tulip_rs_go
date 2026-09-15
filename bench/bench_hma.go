@@ -1,7 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
+
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/trend"
 )
 
 func init() {
@@ -24,7 +29,16 @@ func init() {
 
 			return nil
 		},
-		CinarFn: nil, // hma has no cinar equivalent (cinar has no HMA function)
+		CinarFn: func(s Stock, opts []float64) error {
+			// cinar v2 HmaWithPeriod[T](period) computes Hull Moving Average
+			hma := trend.NewHmaWithPeriod[float64](int(opts[0]))
+			result := hma.ComputeWithContext(context.Background(), helper.SliceToChan(s.Close))
+			// Drain unbuffered channel, touch first value to prevent elision
+			for v := range result {
+				_ = v
+			}
+			return nil
+		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
 			assets := make([][indicators.HmaInputs][]float64, len(stocks))
 			for i, s := range stocks {

@@ -1,9 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
 
-	"github.com/cinar/indicator"
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/volume"
 )
 
 func init() {
@@ -25,12 +28,12 @@ func init() {
 			return nil
 		},
 		CinarFn: func(s Stock, opts []float64) error {
-			// Cinar has MoneyFlowIndex(period int, high, low, closing, volume []float64) []float64
-			result := indicator.MoneyFlowIndex(int(opts[0]), s.High, s.Low, s.Close, s.Volume)
-			if len(result) == 0 {
-				return nil
+			mfi := volume.NewMfiWithPeriod[float64](int(opts[0]))
+			result := mfi.ComputeWithContext(context.Background(), helper.SliceToChan(s.High), helper.SliceToChan(s.Low), helper.SliceToChan(s.Close), helper.SliceToChan(s.Volume))
+			rows := helper.ChanToSlice(result)
+			if len(rows) > 0 {
+				_ = rows[0]
 			}
-			_ = result[0]
 			return nil
 		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {

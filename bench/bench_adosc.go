@@ -1,9 +1,12 @@
 package bench
 
 import (
+	"context"
+
 	"tulip_rs_go/indicators"
 
-	"github.com/cinar/indicator"
+	"github.com/cinar/indicator/v2/helper"
+	"github.com/cinar/indicator/v2/momentum"
 )
 
 func init() {
@@ -25,24 +28,19 @@ func init() {
 			return nil
 		},
 		CinarFn: func(s Stock, opts []float64) error {
-			// Cinar has ChaikinOscillator(fastPeriod, slowPeriod int, low, high, closing, volume []float64) ([]float64, []float64)
-			// We need to pass options as periods: opts[0]=fast, opts[1]=slow
 			if len(opts) != 2 {
 				return nil // skip if wrong option count
 			}
-			fastPeriod := int(opts[0])
-			slowPeriod := int(opts[1])
-			result1, result2 := indicator.ChaikinOscillator(fastPeriod, slowPeriod, s.Low, s.High, s.Close, s.Volume)
-			if len(result1) == 0 && len(result2) == 0 {
+			co := momentum.NewChaikinOscillator[float64]()
+			co.ShortEma.Period = int(opts[0])
+			co.LongEma.Period = int(opts[1])
+			osc, ad := co.ComputeWithContext(context.Background(), helper.SliceToChan(s.High), helper.SliceToChan(s.Low), helper.SliceToChan(s.Close), helper.SliceToChan(s.Volume))
+			// Both output channels are unbuffered; drain them together.
+			rows := helper.ChanToSlices(osc, ad)
+			if len(rows) == 0 {
 				return nil
 			}
-			// Consume both outputs (ChaikinOscillator returns two arrays: ADOSC and signal)
-			if len(result1) > 0 {
-				_ = result1[0]
-			}
-			if len(result2) > 0 {
-				_ = result2[0]
-			}
+			_ = rows[0] // consume to prevent elision
 			return nil
 		},
 		SimdAssetsFn: func(stocks []Stock, opts []float64) error {
