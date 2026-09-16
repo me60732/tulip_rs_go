@@ -8,7 +8,7 @@ import (
 	"math"
 	"os"
 
-	"tulip_rs_go/tulip"
+	"github.com/me60732/tulip_rs_go/tulip"
 )
 
 // Check accumulates assertions; Done prints the verdict and exits non-zero

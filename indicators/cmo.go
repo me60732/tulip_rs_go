@@ -19,7 +19,7 @@ import (
 	"runtime"
 	"unsafe"
 
-	"tulip_rs_go/tulip"
+	"github.com/me60732/tulip_rs_go/tulip"
 )
 
 // Cmo is the namespaced entry point for the Chande Momentum Oscillator.

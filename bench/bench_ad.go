@@ -3,7 +3,7 @@ package bench
 import (
 	"context"
 
-	"tulip_rs_go/indicators"
+	"github.com/me60732/tulip_rs_go/indicators"
 
 	"github.com/cinar/indicator/v2/helper"
 	"github.com/cinar/indicator/v2/volume"

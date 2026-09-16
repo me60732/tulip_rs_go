@@ -7,9 +7,9 @@ package main
 import (
 	"fmt"
 
-	"tulip_rs_go/examples/internal/demo"
-	"tulip_rs_go/indicators"
-	"tulip_rs_go/tulip"
+	"github.com/me60732/tulip_rs_go/examples/internal/demo"
+	"github.com/me60732/tulip_rs_go/indicators"
+	"github.com/me60732/tulip_rs_go/tulip"
 )
 
 // collect flattens per-bar pattern ids for equality checks.

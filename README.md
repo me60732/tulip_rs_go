@@ -67,8 +67,8 @@ go run ./examples/adx     # expected tail: ALL CHECKS PASSED
 
 ```go
 import (
-    "tulip_rs_go/indicators"
-    "tulip_rs_go/tulip"
+    "github.com/me60732/tulip_rs_go/indicators"
+    "github.com/me60732/tulip_rs_go/tulip"
 )
 
 options := []float64{14.0}

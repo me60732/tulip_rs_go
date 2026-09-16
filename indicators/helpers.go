@@ -5,7 +5,7 @@
 // Each indicator is namespaced behind an exported facade value so the whole
 // family shares one import:
 //
-//	import "tulip_rs_go/indicators"
+//	import "github.com/me60732/tulip_rs_go/indicators"
 //
 //	res, st, err := indicators.Adx.Indicator(high, low, close, opts, nil)
 //	defer res.Close()

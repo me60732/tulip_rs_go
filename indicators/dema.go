@@ -19,7 +19,7 @@ import (
 	"runtime"
 	"unsafe"
 
-	"tulip_rs_go/tulip"
+	"github.com/me60732/tulip_rs_go/tulip"
 )
 
 // Dema is the namespaced entry point for the Double Exponential Moving Average.

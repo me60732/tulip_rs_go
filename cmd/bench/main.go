@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"tulip_rs_go/bench"
+	"github.com/me60732/tulip_rs_go/bench"
 )
 
 func main() {

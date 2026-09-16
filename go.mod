@@ -1,4 +1,4 @@
-module tulip_rs_go
+module github.com/me60732/tulip_rs_go
 
 go 1.22
 
