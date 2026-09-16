@@ -38,7 +38,7 @@ var stocksList = []struct {
 func LoadStockData() ([]Stock, error) {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		dbURL = "postgres://tulip:tulip@192.168.50.10:5433/stocks?sslmode=disable"
+		return nil, fmt.Errorf("loadStockData: DATABASE_URL is required (see bench/.env.example)")
 	}
 
 	query := `

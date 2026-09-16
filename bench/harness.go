@@ -199,7 +199,7 @@ type BenchmarkLogger struct {
 func newBenchmarkLogger() (*BenchmarkLogger, error) {
 	dbURL := os.Getenv("BENCHMARK_DATABASE_URL")
 	if dbURL == "" {
-		dbURL = "postgres://tulip:tulip@192.168.50.10:5433/indicator_benchmark?sslmode=disable"
+		return nil, fmt.Errorf("newBenchmarkLogger: BENCHMARK_DATABASE_URL is required when logging is enabled (see bench/.env.example)")
 	}
 
 	conn, err := sql.Open("postgres", dbURL)
@@ -447,7 +447,6 @@ func runBenchmark(def BenchmarkDef, stocks []Stock, logger *BenchmarkLogger) {
 		}
 	}
 
-	
 	// Phase 2: Cinar (if provided) — full grid after tulip has finished.
 	if def.CinarFn != nil {
 		runtime.GC() // clear the previous phase's garbage before timing
@@ -457,7 +456,7 @@ func runBenchmark(def BenchmarkDef, stocks []Stock, logger *BenchmarkLogger) {
 					if err := def.CinarFn(s, opts); err != nil {
 						fmt.Fprintf(os.Stderr, "[warn] cinar_fn failed for %s: %v\n", s.Symbol, err)
 					}
-				}, BENCH_NUMBER, 30/*BENCH_REPEAT*/, 20/*BENCH_WARMUP*/)
+				}, BENCH_NUMBER, BENCH_REPEAT, BENCH_WARMUP)
 				printRow("cinar", s.Symbol, opts, cinarResult)
 				if logger != nil {
 					if err := logger.log(def.Name, "cinar", opts, cinarResult, s.Symbol, len(s.Close)); err != nil {
@@ -488,7 +487,6 @@ func runBenchmark(def BenchmarkDef, stocks []Stock, logger *BenchmarkLogger) {
 		}
 	}
 
-	
 }
 
 func RunAll(stocks []Stock) (int64, int) {
