@@ -1,0 +1,38 @@
+# CI for the Go bindings: install the native lib via the prebuilt GitHub
+# release path (also exercises the --prebuilt bootstrap), then build/vet and
+# smoke-run one end-to-end example. No Rust toolchain needed.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Install native library (prebuilt release asset)
+        run: ./bootstrap.sh --prebuilt
+
+      - name: gofmt check
+        run: test -z "$(gofmt -l . | grep -v '^$')" || { gofmt -l .; exit 1; }
+
+      - name: Build & vet
+        run: |
+          go build ./...
+          go vet ./...
+
+      - name: Smoke — examples/adx end-to-end
+        run: go run ./examples/adx | tail -n 3
