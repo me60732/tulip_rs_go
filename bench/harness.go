@@ -393,63 +393,6 @@ func printRow(impl, symbol string, opts []float64, t TimingResult) {
 func runBenchmark(def BenchmarkDef, stocks []Stock, logger *BenchmarkLogger) {
 	fmt.Printf("\n--- %s ---\n", def.Name)
 
-	// Phase 1: tulip_rs_go — full stock × option grid.
-	for _, s := range stocks {
-		for _, opts := range def.Options {
-			tulipResult := timeFn(func() {
-				if err := def.TulipFn(s, opts); err != nil {
-					fmt.Fprintf(os.Stderr, "[warn] tulip_fn failed for %s: %v\n", s.Symbol, err)
-				}
-			}, BENCH_NUMBER, BENCH_REPEAT, BENCH_WARMUP)
-			printRow("tulip_rs_go", s.Symbol, opts, tulipResult)
-			if logger != nil {
-				if err := logger.log(def.Name, "tulip_rs_go", opts, tulipResult, s.Symbol, len(s.Close)); err != nil {
-					// log failure already printed by logger
-				}
-			}
-		}
-	}
-
-	// Phase 2: Cinar (if provided) — full grid after tulip has finished.
-	if def.CinarFn != nil {
-		runtime.GC() // clear the previous phase's garbage before timing
-		for _, s := range stocks {
-			for _, opts := range def.Options {
-				cinarResult := timeFn(func() {
-					if err := def.CinarFn(s, opts); err != nil {
-						fmt.Fprintf(os.Stderr, "[warn] cinar_fn failed for %s: %v\n", s.Symbol, err)
-					}
-				}, BENCH_NUMBER, BENCH_REPEAT, BENCH_WARMUP)
-				printRow("cinar", s.Symbol, opts, cinarResult)
-				if logger != nil {
-					if err := logger.log(def.Name, "cinar", opts, cinarResult, s.Symbol, len(s.Close)); err != nil {
-						// log failure already printed by logger
-					}
-				}
-			}
-		}
-	}
-
-	// Phase 3: Quantgo (if provided) — full grid after the previous phases.
-	if def.QuantgoFn != nil {
-		runtime.GC()
-		for _, s := range stocks {
-			for _, opts := range def.Options {
-				qgResult := timeFn(func() {
-					if err := def.QuantgoFn(s, opts); err != nil {
-						fmt.Fprintf(os.Stderr, "[warn] quantgo_fn failed for %s: %v\n", s.Symbol, err)
-					}
-				}, BENCH_NUMBER, BENCH_REPEAT, BENCH_WARMUP)
-				printRow("quantgo", s.Symbol, opts, qgResult)
-				if logger != nil {
-					if err := logger.log(def.Name, "quantgo", opts, qgResult, s.Symbol, len(s.Close)); err != nil {
-						// log failure already printed by logger
-					}
-				}
-			}
-		}
-	}
-
 	// SIMD by assets — one option set, every stock processed together
 	if def.SimdAssetsFn != nil && len(stocks) > 0 {
 		for _, opts := range def.Options {
@@ -487,6 +430,65 @@ func runBenchmark(def BenchmarkDef, stocks []Stock, logger *BenchmarkLogger) {
 			}
 		}
 	}
+	// Phase 1: tulip_rs_go — full stock × option grid.
+	for _, s := range stocks {
+		for _, opts := range def.Options {
+			tulipResult := timeFn(func() {
+				if err := def.TulipFn(s, opts); err != nil {
+					fmt.Fprintf(os.Stderr, "[warn] tulip_fn failed for %s: %v\n", s.Symbol, err)
+				}
+			}, BENCH_NUMBER, BENCH_REPEAT, BENCH_WARMUP)
+			printRow("tulip_rs_go", s.Symbol, opts, tulipResult)
+			if logger != nil {
+				if err := logger.log(def.Name, "tulip_rs_go", opts, tulipResult, s.Symbol, len(s.Close)); err != nil {
+					// log failure already printed by logger
+				}
+			}
+		}
+	}
+
+	
+	// Phase 2: Cinar (if provided) — full grid after tulip has finished.
+	if def.CinarFn != nil {
+		runtime.GC() // clear the previous phase's garbage before timing
+		for _, s := range stocks {
+			for _, opts := range def.Options {
+				cinarResult := timeFn(func() {
+					if err := def.CinarFn(s, opts); err != nil {
+						fmt.Fprintf(os.Stderr, "[warn] cinar_fn failed for %s: %v\n", s.Symbol, err)
+					}
+				}, BENCH_NUMBER, 30/*BENCH_REPEAT*/, 20/*BENCH_WARMUP*/)
+				printRow("cinar", s.Symbol, opts, cinarResult)
+				if logger != nil {
+					if err := logger.log(def.Name, "cinar", opts, cinarResult, s.Symbol, len(s.Close)); err != nil {
+						// log failure already printed by logger
+					}
+				}
+			}
+		}
+	}
+
+	// Phase 3: Quantgo (if provided) — full grid after the previous phases.
+	if def.QuantgoFn != nil {
+		runtime.GC()
+		for _, s := range stocks {
+			for _, opts := range def.Options {
+				qgResult := timeFn(func() {
+					if err := def.QuantgoFn(s, opts); err != nil {
+						fmt.Fprintf(os.Stderr, "[warn] quantgo_fn failed for %s: %v\n", s.Symbol, err)
+					}
+				}, BENCH_NUMBER, BENCH_REPEAT, BENCH_WARMUP)
+				printRow("quantgo", s.Symbol, opts, qgResult)
+				if logger != nil {
+					if err := logger.log(def.Name, "quantgo", opts, qgResult, s.Symbol, len(s.Close)); err != nil {
+						// log failure already printed by logger
+					}
+				}
+			}
+		}
+	}
+
+	
 }
 
 func RunAll(stocks []Stock) (int64, int) {
@@ -496,6 +498,28 @@ func RunAll(stocks []Stock) (int64, int) {
 	sort.Slice(benchDefs, func(i, j int) bool {
 		return benchDefs[i].Name < benchDefs[j].Name
 	})
+
+	// BENCH_ONLY="bbands,ema" restricts the run to a subset of indicator
+	// names — for debugging and targeted re-runs (empty = run everything).
+	if only := envStr("BENCH_ONLY", ""); only != "" {
+		wanted := make(map[string]bool)
+		for _, n := range strings.Split(only, ",") {
+			if n = strings.TrimSpace(strings.ToLower(n)); n != "" {
+				wanted[n] = true
+			}
+		}
+		filtered := benchDefs[:0]
+		for _, def := range benchDefs {
+			if wanted[def.Name] {
+				filtered = append(filtered, def)
+			}
+		}
+		benchDefs = filtered
+		if len(benchDefs) == 0 {
+			fmt.Fprintln(os.Stderr, "[error] BENCH_ONLY matched no registered indicators")
+			return 0, 0
+		}
+	}
 
 	var logger *BenchmarkLogger
 	if LOG_TO_DB {
