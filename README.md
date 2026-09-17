@@ -1,8 +1,11 @@
 # TulipRS Go Bindings
 
+[![pkg.go.dev reference](https://pkg.go.dev/badge/github.com/me60732/tulip_rs_go.svg)](https://pkg.go.dev/github.com/me60732/tulip_rs_go)
+[![License: MIT](https://img.shields.io/github/license/me60732/tulip_rs_go.svg)](LICENSE)
+[![CI status](https://github.com/me60732/tulip_rs_go/actions/workflows/ci.yml/badge.svg)](https://github.com/me60732/tulip_rs_go/actions/workflows/ci.yml)
+
 ![Go](https://img.shields.io/badge/go-1.22+-blue.svg)
 ![Rust](https://img.shields.io/badge/rust-nightly-orange.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 High-performance Go bindings for the [TulipRS](https://github.com/me60732/tulip_rs) technical
 analysis library, built on the [`tulip_rs_ffi`](https://github.com/me60732/tulip_rs_ffi) C ABI
