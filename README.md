@@ -11,6 +11,19 @@ High-performance Go bindings for the [TulipRS](https://github.com/me60732/tulip_
 analysis library, built on the [`tulip_rs_ffi`](https://github.com/me60732/tulip_rs_ffi) C ABI
 via cgo. 📖 **[Full documentation for the tulip_rs project](https://me60732.github.io/tulip_rs/)**
 
+## Performance
+
+`tulip_rs_go` brings native Rust + SIMD performance to Go via cgo, with
+zero-copy outputs:
+
+- **~2,283× faster than `cinar/indicator`** (pure Go, median across 45 compared
+  indicators), up to **7,491× faster** (`emv`)
+- cgo call overhead is minimal: `tulip_rs_go` timings track within a few hundred
+  nanoseconds of native Rust on most indicators
+- Beats `cinar` on **45 of 45** directly comparable indicators
+
+📊 **[Full Go binding benchmarks](https://me60732.github.io/tulip_rs/benchmarks/standard/go/)**
+
 ## Features
 
 - **94 technical indicators + 77+ candlestick patterns** — moving averages, oscillators,
