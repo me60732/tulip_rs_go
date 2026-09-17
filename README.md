@@ -16,8 +16,8 @@ via cgo. 📖 **[Full documentation for the tulip_rs project](https://me60732.gi
 `tulip_rs_go` brings native Rust + SIMD performance to Go via cgo, with
 zero-copy outputs:
 
-- **~2,283× faster than `cinar/indicator`** (pure Go, median across 45 compared
-  indicators), up to **7,491× faster** (`emv`)
+- **~2,283×** faster than `cinar/indicator` (pure Go, median across 45 compared
+  indicators), up to **7,491×** (`emv`)
 - cgo call overhead is minimal: `tulip_rs_go` timings track within a few hundred
   nanoseconds of native Rust on most indicators
 - Beats `cinar` on **45 of 45** directly comparable indicators
