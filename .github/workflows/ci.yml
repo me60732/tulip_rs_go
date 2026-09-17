@@ -6,6 +6,7 @@ name: ci
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 
@@ -36,3 +37,20 @@ jobs:
 
       - name: Smoke — examples/adx end-to-end
         run: go run ./examples/adx | tail -n 3
+
+  index-pkg-go-dev:
+    # Only for tagged releases — pkg.go.dev serves immutable per-version docs,
+    # so there's nothing new to index on a plain main-branch push.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger pkg.go.dev indexing for this tag
+        run: |
+          module="github.com/me60732/tulip_rs_go@${GITHUB_REF_NAME}"
+          echo "Requesting pkg.go.dev fetch for ${module}"
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST "https://pkg.go.dev/fetch/${module}")
+          echo "pkg.go.dev responded with HTTP ${status}"
+          if [ "$status" != "200" ]; then
+            echo "::warning::pkg.go.dev fetch trigger returned HTTP ${status} (non-fatal)"
+          fi
