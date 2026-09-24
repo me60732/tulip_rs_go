@@ -25,7 +25,7 @@
 set -euo pipefail
 
 REPO="me60732/tulip_rs_ffi"
-FFI_DEFAULT_REF="v0.2.9"
+FFI_DEFAULT_REF="v0.2.10"
 
 REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SIBLING="$REPO_DIR/../tulip_rs_ffi"
